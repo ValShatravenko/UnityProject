@@ -10,6 +10,29 @@ public class Rabbit : MonoBehaviour {
 	float JumpTime = 0f;
 	public float MaxJumpTime = 2f;
 	public float JumpSpeed = 2f;
+	private bool growthOfRabbit = false;
+	private bool dead = false;
+
+	private IEnumerator toStartPoint(){
+		yield return new WaitForSeconds (0.1f);
+		LevelController.current.onRabitDeath (GetComponent<Rabbit>());
+	}
+
+	public void makeBigger(){
+		if (!growthOfRabbit) {
+			transform.localScale = new Vector3 (1.2f, 1.2f, 0);
+			growthOfRabbit = true;
+		}
+	}
+
+	public void makeSmaller(){
+		if (growthOfRabbit) {
+			transform.localScale = new Vector3 (1f, 1f, 0);
+			growthOfRabbit = false;
+		} else {
+			StartCoroutine (toStartPoint());
+		}
+	}
 
 	// Use this for initialization
 	void Start () {
@@ -26,6 +49,8 @@ public class Rabbit : MonoBehaviour {
 
 
 	void FixedUpdate () {
+		if (dead)
+			return;
 		//[-1, 1]
 		float value = Input.GetAxis ("Horizontal");
 
@@ -55,9 +80,14 @@ public class Rabbit : MonoBehaviour {
 		//Перевіряємо чи проходить лінія через Collider з шаром Ground
 		RaycastHit2D hit = Physics2D.Linecast(from, to, layer_id);
 		if(hit) {
+			if(hit.transform != null
+				&& hit.transform.GetComponent<MovingPlatform>() != null){
+				//Приліпаємо до платформи
+				transform.SetParent(hit.transform);
+			}
 			isGrounded = true;
 		} else {
-			isGrounded = false;
+			transform.SetParent(null);
 		}
 		//Намалювати лінію (для розробника)
 		Debug.DrawLine (from, to, Color.red);
